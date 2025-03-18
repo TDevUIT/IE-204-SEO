@@ -16,6 +16,8 @@ import { useOpenAppSidebar } from '@/hook/use-app-sidebar';
 import { AUTH_ROUTES } from '@/lib/route';
 import NewsMarquee from '@/section/NewsMarquee';
 import Footer from '@/components/Footer';
+import { colors, theme } from '@/constants/colors';
+
 const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
   const {isOpenAppSidebar, setIsOpenAppSidebar} = useOpenAppSidebar();
   const isMobile = useIsMobile();
@@ -39,16 +41,14 @@ const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
       title: "Menu",
       items: [
         { name: "Home", icon: <FaHome />, href: "/" },
-        { name: "Following", icon: <FaUsers /> },
-        { name: "Tags", icon: <FaTag /> },
       ]
     },
     {
       title: "Bookmarks",
       items: [
-        { name: "Quick saves", icon: <FaBookmark /> },
-        { name: "Read it later", icon: <FaRegClock /> },
-        { name: "Likes", icon: <FaHeart /> },
+        { name: "Quick saves", icon: <FaBookmark />, href: "/bookmarks/quick-saves" },
+        { name: "Read it later", icon: <FaRegClock />, href: "/bookmarks/read-later" },
+        { name: "Likes", icon: <FaHeart />, href: "/bookmarks/likes" },
       ]
     }
   ];
@@ -71,9 +71,10 @@ const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
           <aside
             ref={sidebarRef}
             className={cn(
-              'h-full border-r-2 border-black/70 fixed bg-background transition-all duration-300 z-50 bg-white',
+              'h-full border-r-2 border-black/70 fixed bg-background transition-all duration-300 z-50',
               isOpenAppSidebar ? (isMobile ? 'w-full bg-white' : 'w-64') : 'w-20'
             )}
+            style={{ backgroundColor: theme.sidebar.background }}
           >
             {!isOpenAppSidebar && (
               <div className='h-full flex flex-col items-center justify-between py-6'>
@@ -81,40 +82,61 @@ const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
                     variant="ghost" 
                     size="icon"
                     onClick={() => setIsOpenAppSidebar(true)}
+                    style={{ color: colors.text.secondary }}
+                    className="hover:bg-opacity-100"
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = colors.background.hover;
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = '';
+                    }}
                   >
                     <FaBars className='h-6 w-6' />
                   </Button>
 
                   <div className='-rotate-90 whitespace-nowrap'>
-                    <h1 className='font-bold text-4xl'>Bioai</h1>
+                    <h1 className='font-bold text-4xl' style={{ color: theme.sidebar.text }}>Bloai</h1>
                   </div>
 
                   <div className='flex flex-col gap-5'>
-                    <FaComments className='h-6 w-6 cursor-pointer' />
-                    <FaFolderOpen className='h-6 w-6 cursor-pointer' />
-                    <FaBookmark className='h-6 w-6 cursor-pointer' />
+                    <FaComments className='h-6 w-6 cursor-pointer' style={{ color: colors.text.secondary }} />
+                    <FaFolderOpen className='h-6 w-6 cursor-pointer' style={{ color: colors.text.secondary }} />
+                    <FaBookmark className='h-6 w-6 cursor-pointer' style={{ color: colors.text.secondary }} />
                   </div>
               </div>
             )}
 
             {isOpenAppSidebar && (
               <div className='h-full flex flex-col p-4'>
-                <div className='h-full flex flex-col p-4'>
                 <div className='flex justify-between items-center mb-6'>
-                  <Link href="/" className='font-bold text-xl'>
-                    Bioai
+                  <Link href="/" className='font-bold text-xl' style={{ color: theme.sidebar.text }}>
+                    Bloai
                   </Link>
                   <Button 
                     variant="ghost" 
                     size="icon"
                     onClick={() => setIsOpenAppSidebar(false)}
+                    style={{ color: colors.text.secondary }}
+                    className="hover:bg-opacity-100"
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = colors.background.hover;
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = '';
+                    }}
                   >
                     <FaTimes className='h-6 w-6' />
                   </Button>
                 </div>
 
                 <Link href='/new-post'>
-                  <Button className='w-full mb-6 gap-2'>
+                  <Button 
+                    className='w-full mb-6 gap-2 hover:opacity-90'
+                    style={{ 
+                      backgroundColor: colors.primary[600],
+                      color: colors.text.white
+                    }}
+                  >
                     <FaPlus className='text-sm' />
                     <span>New Blog</span>
                   </Button>
@@ -122,7 +144,7 @@ const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
 
                 {menuSections.map((section, sectionIndex) => (
                   <div key={sectionIndex} className='mb-6'>
-                    <h3 className='text-sm font-medium text-muted-foreground mb-3 px-2'>
+                    <h3 className='text-sm font-medium mb-3 px-2' style={{ color: colors.text.muted }}>
                       {section.title}
                     </h3>
                     <ul className='space-y-1'>
@@ -130,12 +152,30 @@ const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
                         <li key={itemIndex}>
                           {item.href ? (
                             <Button
-                              variant={pathname === item.href ? "secondary" : "ghost"}
+                              variant="ghost"
                               className='w-full justify-start gap-3'
+                              style={{ 
+                                backgroundColor: pathname === item.href ? colors.primary[50] : 'transparent',
+                                color: pathname === item.href ? colors.primary[600] : theme.sidebar.text,
+                              }}
+                              onMouseOver={(e) => {
+                                if (pathname !== item.href) {
+                                  e.currentTarget.style.backgroundColor = theme.sidebar.hoverBg;
+                                }
+                              }}
+                              onMouseOut={(e) => {
+                                if (pathname !== item.href) {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }
+                              }}
                               asChild
                             >
                               <Link href={item.href}>
-                                {item.icon}
+                                <span style={{ 
+                                  color: pathname === item.href ? colors.primary[600] : theme.sidebar.iconColor 
+                                }}>
+                                  {item.icon}
+                                </span>
                                 {item.name}
                               </Link>
                             </Button>
@@ -143,8 +183,15 @@ const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
                             <Button
                               variant="ghost"
                               className='w-full justify-start gap-3'
+                              style={{ color: theme.sidebar.text }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = theme.sidebar.hoverBg;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
                             >
-                              {item.icon}
+                              <span style={{ color: theme.sidebar.iconColor }}>{item.icon}</span>
                               {item.name}
                             </Button>
                           )}
@@ -153,7 +200,6 @@ const AppSidebarProvider = ({ children }: { children: React.ReactNode }) => {
                     </ul>
                   </div>
                 ))}
-              </div>
               </div>
             )}
           </aside>
