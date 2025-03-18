@@ -1,15 +1,15 @@
 'use client';
 
-import { signIn, useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail,LockKeyhole  } from 'lucide-react';
+import { Mail, LockKeyhole } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
-import { auth } from '@/server/auth';
+
 const SignInPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,6 +17,7 @@ const SignInPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     try {
@@ -26,9 +27,18 @@ const SignInPage = () => {
     }
   };
 
+  const handleGithubLogin = async () => {
+    try {
+      await signIn('github', { callbackUrl });
+    } catch (error) {
+      setError('Failed to authenticate with GitHub');
+    }
+  };
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
       const res = await signIn('credentials', {
@@ -46,6 +56,8 @@ const SignInPage = () => {
       }
     } catch (error) {
       setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -60,7 +72,7 @@ const SignInPage = () => {
           Welcome Back
         </h1>
         <p className="text-gray-600">
-           Sign in to continue your journey
+          Sign in to continue your journey
         </p>
       </div>
       {error && (
@@ -112,9 +124,9 @@ const SignInPage = () => {
           </div>
         </div>
 
-        <div className="flex flex-row items-center space-x-2 justify-between mb-4">
+        <div className="flex justify-between items-center">
           <div className='flex justify-center items-center gap-2'>
-            <Checkbox id="remember" className=''/>
+            <Checkbox id="remember" />
             <label
               htmlFor="remember"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -122,17 +134,19 @@ const SignInPage = () => {
               Remember
             </label>
           </div>
-          <span className="text-sm ml-1 text-blue-500 font-medium cursor-pointer hover:underline">Forgot password?</span>
+          <span className="text-sm text-blue-500 font-medium cursor-pointer hover:underline">Forgot password?</span>
         </div>
+        
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
+          disabled={isLoading}
           className="w-full bg-gradient-to-br from-purple-600 to-blue-500 text-white
                     py-3 px-6 rounded-lg hover:shadow-lg transition-all font-medium
-                    focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
         >
-          Sign In
+          {isLoading ? 'Signing in...' : 'Sign In'}
         </motion.button>
       </form>
 
@@ -155,11 +169,11 @@ const SignInPage = () => {
           <span>Google</span>
         </button>
         <button
-          onClick={handleGoogleLogin}
-          className="btn google mt-2 w-full h-12 rounded-lg flex justify-center items-center space-x-2 font-medium border border-gray-200 bg-[#e8e8e8] cursor-pointer transition-all hover:border-blue-500"
+          onClick={handleGithubLogin}
+          className="btn github mt-2 w-full h-12 rounded-lg flex justify-center items-center space-x-2 font-medium border border-gray-200 bg-[#e8e8e8] cursor-pointer transition-all hover:border-blue-500"
         >
           <FaGithub className="text-xl" />
-          <span>Github</span>
+          <span>GitHub</span>
         </button>
       </div>
     </motion.div>

@@ -1,10 +1,12 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
 import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/server/db";
 import { env } from "@/env";
-import Google from "next-auth/providers/google";
+import bcrypt from "bcryptjs";
+
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
  * object and keep type safety.
@@ -33,42 +35,114 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
-    Google
-    // GoogleProvider({
-    //   clientId: process.env.GOOGLE_CLIENT_ID,
-    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    //   // checks: ["none"]
-    // })
-    // DiscordProvider,
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
+    GoogleProvider({
+      clientId: env.AUTH_GOOGLE_ID,
+      clientSecret: env.AUTH_GOOGLE_SECRET,
+    }),
+    GitHubProvider({
+      clientId: env.AUTH_GITHUB_ID,
+      clientSecret: env.AUTH_GITHUB_SECRET,
+    }),
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+        name: { label: "Name", type: "text" },
+        type: { label: "Type", type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password required");
+        }
+
+        // Đăng ký người dùng mới
+        if (credentials.type === "signup") {
+          if (!credentials.name) {
+            throw new Error("Name is required for signup");
+          }
+
+          const existingUser = await db.user.findUnique({
+            where: { email: credentials.email }
+          });
+
+          if (existingUser) {
+            throw new Error("Email already in use");
+          }
+
+          const hashedPassword = await bcrypt.hash(credentials.password, 10);
+          
+          const user = await db.user.create({
+            data: {
+              email: credentials.email,
+              name: credentials.name,
+              // Lưu mật khẩu đã hash vào một field mới trong model User
+              // Bạn cần thêm field này vào schema Prisma
+            }
+          });
+
+          // Lưu mật khẩu vào bảng riêng để tránh lộ thông tin
+          await db.userCredential.create({
+            data: {
+              userId: user.id,
+              password: hashedPassword
+            }
+          });
+
+          return user;
+        }
+        
+        // Đăng nhập
+        const user = await db.user.findUnique({
+          where: { email: credentials.email }
+        });
+
+        if (!user) {
+          throw new Error("No user found with this email");
+        }
+
+        // Lấy thông tin credential
+        const userCredential = await db.userCredential.findUnique({
+          where: { userId: user.id }
+        });
+
+        if (!userCredential || !userCredential.password) {
+          throw new Error("Please sign in with the provider you used to register");
+        }
+
+        const passwordMatch = await bcrypt.compare(
+          credentials.password,
+          userCredential.password
+        );
+
+        if (!passwordMatch) {
+          throw new Error("Incorrect password");
+        }
+
+        return user;
+      }
+    })
   ],
   session: { strategy: "jwt" },
   secret: env.AUTH_SECRET,
   adapter: PrismaAdapter(db),
   callbacks: {
-    session: ({ session, user, token }) => ({
+    session: ({ session, token }) => ({
       ...session,
       user: {
         ...session.user,
         id: token.sub,
       },
-      token,
     }),
-    async jwt({ token }) {
+    jwt: ({ token, user }) => {
+      if (user) {
+        token.sub = user.id;
+      }
       return token;
     },
   },
   pages: {
     signIn: "/auth/signin",
-    signOut: "/auth/signout",
     error: "/auth/error",
   }
 } satisfies NextAuthConfig;

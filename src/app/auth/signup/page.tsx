@@ -18,6 +18,7 @@ const SignUpPage = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     try {
@@ -38,6 +39,7 @@ const SignUpPage = () => {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
       const res = await signIn('credentials', {
@@ -56,6 +58,8 @@ const SignUpPage = () => {
       }
     } catch (error) {
       setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -155,11 +159,12 @@ const SignUpPage = () => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
+          disabled={isLoading}
           className="w-full bg-gradient-to-br from-purple-600 to-blue-500 text-white
                     py-3 px-6 rounded-lg hover:shadow-lg transition-all font-medium
-                    focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
         >
-          Create Account
+          {isLoading ? 'Creating Account...' : 'Create Account'}
         </motion.button>
       </form>
 

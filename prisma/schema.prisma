@@ -65,6 +65,7 @@ model User {
     posts         Post[]
     blogs         Blog[]    @relation("UserBlogs")
     comments      Comment[] @relation("UserComments")
+    credential    UserCredential?
 }
 
 
@@ -123,4 +124,13 @@ model Comment {
     author    User     @relation("UserComments", fields: [authorId], references: [id])
     authorId  String
     createdAt DateTime @default(now())
+}
+
+model UserCredential {
+    id        String   @id @default(cuid())
+    userId    String   @unique
+    password  String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }

@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaArrowRight, FaLightbulb, FaUsers, FaRocket } from 'react-icons/fa';
+import { useCurrentUser } from '@/hook/use-current-user';
 
 const LandingPage = () => {
   const [randomImage, setRandomImage] = useState('');
+  const user = useCurrentUser();
 
   useEffect(() => {
     setRandomImage(`https://picsum.photos/600/400?random=10)}`);
@@ -25,13 +27,34 @@ const LandingPage = () => {
               Nền tảng blog dành cho developer, nơi bạn có thể chia sẻ kiến thức, 
               kinh nghiệm và kết nối với cộng đồng lập trình viên.
             </p>
-            <Link 
-              href="/auth/register" 
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Bắt đầu ngay
-              <FaArrowRight />
-            </Link>
+            
+            {user ? (
+              // Người dùng đã đăng nhập - hiển thị nút bắt đầu viết blog
+              <Link 
+                href="/dashboard/new-post" 
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Bắt đầu viết blog
+                <FaArrowRight />
+              </Link>
+            ) : (
+              // Người dùng chưa đăng nhập - hiển thị nút đăng nhập và đăng ký
+              <div className="flex flex-wrap gap-4">
+                <Link 
+                  href="/auth/signin" 
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Sign In
+                  <FaArrowRight />
+                </Link>
+                <Link 
+                  href="/auth/signup" 
+                  className="inline-flex items-center gap-2 bg-white border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
           <div className="lg:w-1/2">
             {randomImage && (
